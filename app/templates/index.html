@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #chatbox {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 10px;
+            background-color: #fff;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            max-width: 80%;
+            word-wrap: break-word;
+            white-space: pre-wrap; 
+        }
+        .user-message {
+            background-color: #e8f5e9;
+            margin-left: 20%;
+        }
+        .ai-message {
+            background-color: #e3f2fd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Message Analyzer</h1>
+        <div id="api-key-form">
+            <input type="text" id="api-key" placeholder="Enter your API key">
+            <button onclick="setApiKey()">Set API Key</button>
+        </div>
+        <div id="message-form" style="display: none;">
+            <textarea id="message" placeholder="Enter the message to analyze" rows="4"></textarea>
+            <button onclick="analyzeMessage()">Analyze Message</button>
+        </div>
+        <div id="chat-interface" style="display: none;">
+            <div id="chatbox"></div>
+            <input type="text" id="user-input" placeholder="Ask about the message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+    <script>
+        function setApiKey() {
+            const apiKey = document.getElementById('api-key').value;
+            fetch('/set_api_key', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({api_key: apiKey}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('api-key-form').style.display = 'none';
+                    document.getElementById('message-form').style.display = 'block';
+                }
+            });
+        }
+
+        function analyzeMessage() {
+            const message = document.getElementById('message').value;
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({message: message}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('message-form').style.display = 'none';
+                document.getElementById('chat-interface').style.display = 'block';
+                addMessage(data.response, 'ai');
+            });
+        }
+
+        function sendMessage() {
+            const userInput = document.getElementById('user-input').value;
+            addMessage(userInput, 'user');
+            document.getElementById('user-input').value = '';
+
+            fetch('/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({message: userInput}),
+            })
+            .then(response => response.json())
+            .then(data => {
+                addMessage(data.response, 'ai');
+            });
+        }
+
+        function addMessage(message, sender) {
+            const chatbox = document.getElementById('chatbox');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('message', sender + '-message');
+            messageElement.textContent = message;
+            chatbox.appendChild(messageElement);
+            chatbox.scrollTop = chatbox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
